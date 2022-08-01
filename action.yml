@@ -1,0 +1,45 @@
+name: 'Sparse Checkout'
+description: 'Sparse checkout of a git repository'
+inputs:
+  repository:
+    description: 'Repository name with owner. For example, actions/checkout'
+    default: ${{ github.repository }}
+  ref:
+    description: 'The branch, tag or SHA to checkout.'
+    default: ${{ github.sha }}
+  token:
+    description: 'Personal access token (PAT) used to fetch the repository.'
+    default: ${{ github.token }}
+  path:
+    description: 'Relative path under $GITHUB_WORKSPACE to place the repository'
+    default: '.'
+  submodules:
+    description: 'Whether to checkout submodules: `true` to checkout submodules or `recursive` to recursively checkout submodules.'
+    default: false
+  include-paths:
+    description: 'Space-separated list of paths to include in the sparse checkout'
+runs:
+  using: "composite"
+  steps:
+    - name: Sparse checkout
+      shell: bash
+      run: |
+        mkdir -p "${{ inputs.path }}"
+        cd "${{ inputs.path }}"
+
+        REPO="https://github-actions:${{ inputs.token }}@github.com/${{ inputs.repository }}.git"
+        git clone --filter=blob:none --no-checkout --sparse "$REPO" .
+        git config gc.auto 0
+        git sparse-checkout init --cone
+        git sparse-checkout add ${{ inputs.include-paths }}
+        git checkout --detach ${{ inputs.ref }}
+
+        if [ "${{ inputs.submodules }}" != "" ] && [ "${{ inputs.submodules }}" != "false" ]; then
+          git submodule init -- ${{ inputs.include-paths }}
+          if [ "${{ inputs.submodule }}" == "recursive" ]; then
+            git submodule update --depth=1 -- ${{ inputs.include-paths }}
+          else
+            git submodule update --depth=1 --recursive -- ${{ inputs.include-paths }}
+          fi
+        fi
+
