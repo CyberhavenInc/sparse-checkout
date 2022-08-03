@@ -32,7 +32,7 @@ runs:
         git config gc.auto 0
         git sparse-checkout init --cone
         git sparse-checkout add ${{ inputs.include-paths }}
-        git checkout --detach ${{ inputs.ref }}
+        git checkout ${{ inputs.ref }}
 
         if [ "${{ inputs.submodules }}" != "" ] && [ "${{ inputs.submodules }}" != "false" ]; then
           git submodule init -- ${{ inputs.include-paths }}
